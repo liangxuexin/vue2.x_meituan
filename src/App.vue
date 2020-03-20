@@ -1,23 +1,46 @@
 <template>
   <div id="app">
-    <img src="./assets/logo.png">
-    <router-view/>
+    <!--header-->
+    <app-header :poiInfo="poiInfo"></app-header>
+    <!--nav-->
+    <app-nav></app-nav>
+    <!--content-->
+    <router-view></router-view>
   </div>
 </template>
 
 <script>
+import Header from "./components/header/Header";
+import Nav from "./components/nav/Nav";
 export default {
-  name: 'App'
+  name: 'App',
+  components:{
+    'app-header':Header,
+    'app-nav':Nav
+  },
+  created(){
+    // axios
+
+    //fetch
+    fetch('api/goods')
+    .then(response => {
+      return response.json();
+    })
+    .then(response => {
+      // console.log(response)
+      if( response.code == 0 ){
+        this.poiInfo = response.data.poi_info;
+      }
+    })
+  },
+  data(){
+    return{
+      poiInfo :{}
+    }
+  }
 }
 </script>
 
 <style>
-#app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
+
 </style>
