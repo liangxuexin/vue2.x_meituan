@@ -20,7 +20,6 @@ export default {
   },
   created(){
     // axios
-
     //fetch
     fetch('api/goods')
     .then(response => {
@@ -32,6 +31,10 @@ export default {
         this.poiInfo = response.data.poi_info;
       }
     })
+  },
+
+  mounted(){
+    const t =window.location.href;
   },
   data(){
     return{
