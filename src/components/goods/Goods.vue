@@ -17,10 +17,11 @@
                         <img class="icon" :src="item.icon" v-if="item.icon">
                         {{item.name}}
                     </p>
-                    <!-- <i class="num" v-show="calculateCount(item.spus)">
+                    <i class="num" v-show="calculateCount(item.spus)">
                         {{calculateCount(item.spus)}}
-                    </i> -->
-                </li>
+                    </i>
+                </li> 
+                
             </ul>
         </div>
 
@@ -53,16 +54,28 @@
                                     <span class="unit">/{{item.unit}}</span>
                                 </p>
                             </div>
+                            <div class="cartcontrol-wrapper">
+                                <app-cart-control :food="item"></app-cart-control>
+                            </div>
                         </li>
                     </ul>
                 </li>
             </ul>    
         </div>
+
+        <!-- 购物车 -->
+        <app-shopcart :poiInfo="poiInfo" :selectFoods="selectFoods"></app-shopcart>
     </div>
 </template>
 <script>
 import BScroll from '@better-scroll/core'
+import Shopcart from '../shopcart/Shopcart'
+import CartControl from '../cartcontrol/CartControl'
 export default {
+    components:{
+        'app-shopcart':Shopcart,
+        'app-cart-control':CartControl,
+    },
     created(){
         // axios
         //fetch
@@ -74,6 +87,7 @@ export default {
         if( response.code == 0 ){
             this.container = response.data.container_operation_source;
             this.goods = response.data.food_spu_tags;
+            this.poiInfo = response.data.poi_info;
             
             // 当dom已经更新才执行回调函数
             this.$nextTick(function(){
@@ -100,12 +114,21 @@ export default {
                 
                 // 是否在上述区间中
                 if( !height2 || ( this.scrollY>=height1 && this.scrollY <= height2) ){
-                    console.log(i)
                     return i;
                 }
             }
-            console.log(0)
             return 0;
+        },
+        selectFoods(){
+            let foods = [];
+            this.goods.forEach((myfoods)=>{
+                myfoods.spus.forEach((food)=>{
+                    if(food.count > 0){
+                        foods.push(food);
+                    }
+                })
+            });
+            return foods;
         }
     },
     // 计算属性是不能够接收参数
@@ -116,11 +139,15 @@ export default {
         initScroll(){
             this.menuScroll = new BScroll(this.$refs.menuScroll);
             this.foodScroll = new BScroll(this.$refs.foodScroll,{
-                probeType:3
+                probeType:3,
+                click:true
             });
 
             // foodScroll 监听事件
             this.foodScroll.on('scroll',(pos) => {
+                // Math.abs(x) 函数返回指定数字 “x“ 的绝对值。
+                // Math.round() 函数返回一个数字四舍五入后最接近的整数
+                // 获取右侧实时滑动的y值，为了下一步准确地在‘左菜单’对应项‘被选中’
                 this.scrollY = Math.abs(Math.round(pos.y));
             });
         },
@@ -131,18 +158,26 @@ export default {
             this.listHeight.push(height);
             for (let i = 0; i < foodlist.length; i++) {
                 let item = foodlist[i];
-                // 累加
+                // 累加（可视高度）
                 height+=item.clientHeight;
                 this.listHeight.push(height);
             }
         },
         selectMenu(index){
-            // console.log(index)
             let foodlist = this.$refs.foodScroll.getElementsByClassName('food-list-hook');
+            // 左菜单当时选中的“项”
             let element  = foodlist[index];
-            console.log(element)
-            this.foodScroll.scrollToElement(element,250);//scrollToElement()滚动到目标元素
+            this.foodScroll.scrollToElement(element,250);//scrollToElement()250毫秒滚动到目标元素
 
+        },
+        calculateCount(spus){
+            let count = 0
+            spus.forEach((food) => {
+                if(food.count > 0){
+                count += food.count
+                }
+            })
+            return count
         }
     },
     
@@ -153,14 +188,13 @@ export default {
             listHeight:[],
             menuScroll:{},
             foodScroll:{},
-            scrollY:0
-
+            scrollY:0,
+            poiInfo:{}
         }
     }
 }
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
     .goods{
         display: flex;
@@ -186,6 +220,7 @@ export default {
     .goods .menu-wrapper .menu-item{
         padding:16px 23px 15px 10px ;
         border-bottom: 1px solid #e4e4e4;
+        position: relative;
     }
 
     .goods .menu-item .menu-item .text{
